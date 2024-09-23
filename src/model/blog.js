@@ -6,7 +6,7 @@ function validChecker(reqObj){
     }
     const check = ["title","content","category","tags"];
     check.forEach(element=>{
-      const checkElement = reqObj["element"];
+      const checkElement = reqObj[element];
       let isValidArray = true;
       let validResult = false;
 
@@ -31,39 +31,50 @@ export class Blog{
             return createStatus; 
         }
         const currentDate = new Date();
-        createBlog["blogData"] =  await getData(`
-            INSERT INTO posts (title,content,category,tags,createdAt,updatedAt)
-               VALUES ($1,$2,$3,$4,$5,$6)
-               ON CONFLICT(id)
-            DO UPDATE SET
-               title = EXCLUDED.title,
-               content = EXCLUDED.content,
-               category = EXCLUDED.category,
-               tags = EXCLUDED.tags,
-               updatedAt = EXCLUDED.updatedAt
-            RETURNING *
-            `,[reqObj.title,reqObj.content,reqObj.category,reqObj.tags,currentDate]);
+        createStatus["blogData"] =  await getData(`
+            INSERT INTO posts (title,content,category,tags,createdat,updatedat)
+               VALUES ($1,$2,$3,$4,$5,$6) RETURNING *
+            `,[reqObj.title,reqObj.content,reqObj.category,reqObj.tags,currentDate,currentDate]);
         
-        createStatus.isSuccess = createBlog["blogData"].length>0;
+        createStatus.isSuccess = createStatus["blogData"].length>0;
         createStatus["errMsg"] = createStatus.isSuccess?"":"Sorry.Error occur in database";
         return createStatus;
     }
 
-    static async getBlogById(reqObj){
-        const id = reqObj.id || "-1";
+    static async upDateBlog(target_id,reqObj){
+      const updateStatus = {isSuccess:false};
+      updateStatus["errMsg"] = validChecker(reqObj).errMsg;
+      if(updateStatus["errMsg"]){
+          return updateStatus; 
+      }
+      const currentDate = new Date();
+      updateStatus["blogData"] =  await getData(`
+          UPDATE posts 
+              SET title=$1,content=$2,category=$3,tags=$4,updatedat=$5
+          WHERE id = $6 RETURNING *
+          `,[reqObj.title,reqObj.content,reqObj.category,reqObj.tags,currentDate,target_id]);
+      console.log(updateStatus);
+      updateStatus.isSuccess = updateStatus["blogData"].length>0;
+      updateStatus["errMsg"] = updateStatus.isSuccess?"":"Sorry.Error occur in database";
+      return updateStatus;
+    }
+
+    static async getBlogById(target_id){
+        const id = target_id || "-1";
         const getStatus = {isExist:false};
-        getStatus["blogData"] = getData("SELECT * FROM posts WHERE id = $1",[id]);
+        getStatus["blogData"] = await getData("SELECT * FROM posts WHERE id = $1",[id]);
         getStatus.isExist = getStatus["blogData"].length>0;
         return getStatus;
-    
     }
 
     static async getBlogs(term){
-
+      const filter = term?`WHERE LOWER(title) LIKE '%${term}%' OR LOWER(content) LIKE '%${term}%' OR LOWER(category) LIKE '%${term}%'`:"";
+      const blogData = await getData(`SELECT * FROM posts ${filter}`);
+      return blogData;
     }
 
-    static async deleteBlog(reqObj){
-        const id = reqObj.id || "-1";
+    static async deleteBlog(target_id){
+        const id = target_id || "-1";
         let deleteStatus = await manipulateData("DELETE FROM posts WHERE id = $1",[id]);
         return deleteStatus>0;
     }
