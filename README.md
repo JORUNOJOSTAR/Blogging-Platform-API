@@ -4,7 +4,7 @@ A challenge project from [roadmap](https://roadmap.sh/projects/blogging-platform
 ## Description
 A RESTful API for blogging platform which allow users to perform following operation.
 
-| Operation      | route           | Method  |
+| Operation      | Path          | Method  |
 | ------------- |:-------------:| -----:|
 | Create a new blog post      | /api/posts | POST |
 | Update an existing blog post     | /api/posts/:id     |  PUT |
@@ -48,10 +48,10 @@ npm i
 ```
 
 Finally,
-
 ```
 node index.js
 ```
+API will start on localhost:3000.
 
 ## Result
 You can check the api with POSTMAN.
